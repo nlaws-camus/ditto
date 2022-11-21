@@ -26,15 +26,15 @@ from traitlets import Unicode
 
 class Reader(AbstractReader):
     """
-        Author: Aadil Latif
-        TODO: Add reader details here
+    Author: Aadil Latif
+    TODO: Add reader details here
     """
 
     register_names = ["windmil", "Windmil", "WM", "wm"]
 
     def __init__(self, **kwargs):
         """
-            Windmil-->class constructor
+        Windmil-->class constructor
         """
         super(Reader, self).__init__(**kwargs)
         self.windmil_folder = (
@@ -54,8 +54,8 @@ class Reader(AbstractReader):
 
     def get_file_content(self):
         """
-            Windmil generates multiple xml(Multispeak format) files for a single project. The code below
-            reads all the xml files in a given folder and merges them to form 1 dictionary
+        Windmil generates multiple xml(Multispeak format) files for a single project. The code below
+        reads all the xml files in a given folder and merges them to form 1 dictionary
         """
         try:
             wm_data = wm2graph(self.windmil_folder)
@@ -69,7 +69,7 @@ class Reader(AbstractReader):
 
     def parse(self, model, **kwargs):
         """
-            Parse the xml file and get topological elements
+        Parse the xml file and get topological elements
         """
 
         if "verbose" in kwargs and isinstance(kwargs["verbose"], bool):
