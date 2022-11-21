@@ -91,10 +91,10 @@ class Reader(AbstractReader):
         for node_name in self.nxGraph.nodes():
             node = Node(model)
             node.name = node_name
-            if "x" in self.nxGraph.node[node_name]:
+            if "x" in self.nxGraph.nodes[node_name]:
                 node_pos = Position(model)
-                node_pos.long = float(self.nxGraph.node[node_name]["x"])
-                node_pos.lat = float(self.nxGraph.node[node_name]["y"])
+                node_pos.long = float(self.nxGraph.nodes[node_name]["x"])
+                node_pos.lat = float(self.nxGraph.nodes[node_name]["y"])
                 node.positions.append(node_pos)
 
     def parse_lines(self, model):
@@ -171,10 +171,10 @@ class Reader(AbstractReader):
             device.wires.append(phase_device)
 
         for node_name in [node1, node2]:
-            if "x" in self.nxGraph.node[node_name]:
+            if "x" in self.nxGraph.nodes[node_name]:
                 node_pos = Position(model)
-                node_pos.long = float(self.nxGraph.node[node_name]["x"])
-                node_pos.lat = float(self.nxGraph.node[node_name]["y"])
+                node_pos.long = float(self.nxGraph.nodes[node_name]["x"])
+                node_pos.lat = float(self.nxGraph.nodes[node_name]["y"])
                 device.positions.append(node_pos)
 
     def create_switch(self, model, node1, node2):
@@ -218,10 +218,10 @@ class Reader(AbstractReader):
             switch.wires.append(phase_sw)
 
         for node_name in [node1, node2]:
-            if "x" in self.nxGraph.node[node_name]:
+            if "x" in self.nxGraph.nodes[node_name]:
                 node_pos = Position(model)
-                node_pos.long = float(self.nxGraph.node[node_name]["x"])
-                node_pos.lat = float(self.nxGraph.node[node_name]["y"])
+                node_pos.long = float(self.nxGraph.nodes[node_name]["x"])
+                node_pos.lat = float(self.nxGraph.nodes[node_name]["y"])
                 switch.positions.append(node_pos)
 
     def create_line(self, model, node1, node2, OHcables, UGcables):
@@ -252,10 +252,10 @@ class Reader(AbstractReader):
         )
 
         for node_name in [node1, node2]:
-            if "x" in self.nxGraph.node[node_name]:
+            if "x" in self.nxGraph.nodes[node_name]:
                 node_pos = Position(model)
-                node_pos.long = float(self.nxGraph.node[node_name]["x"])
-                node_pos.lat = float(self.nxGraph.node[node_name]["y"])
+                node_pos.long = float(self.nxGraph.nodes[node_name]["x"])
+                node_pos.lat = float(self.nxGraph.nodes[node_name]["y"])
                 line.positions.append(node_pos)
 
         phases = self.nxGraph[node1][node2]["phases"]
@@ -362,11 +362,11 @@ class Reader(AbstractReader):
     def parse_loads(self, model):
         loadmixes = self.nxGraph.graph["Load Mix"]
         for node in self.nxGraph.nodes():
-            if "loads" in self.nxGraph.node[node] and len(
+            if "loads" in self.nxGraph.nodes[node] and len(
                 list(self.nxGraph.edges([node]))
             ):
                 node1, node2 = list(self.nxGraph.edges([node]))[0]
-                for load_name, load_properties in self.nxGraph.node[node][
+                for load_name, load_properties in self.nxGraph.nodes[node][
                     "loads"
                 ].items():
                     if bool(load_properties["enabled"]):
@@ -420,19 +420,19 @@ class Reader(AbstractReader):
                             load_phase.model = 1 if not useZIP else 8
                             load.phase_loads.append(load_phase)
 
-                        if "x" in self.nxGraph.node[node]:
+                        if "x" in self.nxGraph.nodes[node]:
                             node_pos = Position(model)
-                            node_pos.long = float(self.nxGraph.node[node]["x"])
-                            node_pos.lat = float(self.nxGraph.node[node]["y"])
+                            node_pos.long = float(self.nxGraph.nodes[node]["x"])
+                            node_pos.lat = float(self.nxGraph.nodes[node]["y"])
                             load.positions.append(node_pos)
 
     def parse_capacitors(self, model):
         for node in self.nxGraph.nodes():
-            if "capacitors" in self.nxGraph.node[node] and len(
+            if "capacitors" in self.nxGraph.nodes[node] and len(
                 list(self.nxGraph.edges([node]))
             ):
                 node1, node2 = list(self.nxGraph.edges([node]))[0]
-                for cap_name, cap_properties in self.nxGraph.node[node][
+                for cap_name, cap_properties in self.nxGraph.nodes[node][
                     "loads"
                 ].items():
                     if cap_properties["state"] != "Disconnected":
@@ -472,10 +472,10 @@ class Reader(AbstractReader):
                             # cap_phase.sections = useZIP
                             # cap_phase.normalsections = P * 100
 
-                        if "x" in self.nxGraph.node[node]:
+                        if "x" in self.nxGraph.nodes[node]:
                             node_pos = Position(model)
-                            node_pos.long = float(self.nxGraph.node[node]["x"])
-                            node_pos.lat = float(self.nxGraph.node[node]["y"])
+                            node_pos.long = float(self.nxGraph.nodes[node]["x"])
+                            node_pos.lat = float(self.nxGraph.nodes[node]["y"])
                             capacitor.positions.append(node_pos)
 
     def parse_transformers(self, model):
@@ -535,8 +535,8 @@ class Reader(AbstractReader):
                 tr.is_center_tap = int(self.nxGraph[node1][node2]["is center tapped"])
                 # Set transformer position
                 node_pos = Position(model)
-                node_pos.long = float(self.nxGraph.node[node2]["x"])
-                node_pos.lat = float(self.nxGraph.node[node2]["y"])
+                node_pos.long = float(self.nxGraph.nodes[node2]["x"])
+                node_pos.lat = float(self.nxGraph.nodes[node2]["y"])
                 tr.positions.append(node_pos)
 
                 for i in range(nwdgs):
@@ -593,8 +593,8 @@ class Reader(AbstractReader):
                 Regu.substation_name = reg_data["substation"]
 
                 node_pos = Position(model)
-                node_pos.long = float(self.nxGraph.node[node2]["x"])
-                node_pos.lat = float(self.nxGraph.node[node2]["y"])
+                node_pos.long = float(self.nxGraph.nodes[node2]["x"])
+                node_pos.lat = float(self.nxGraph.nodes[node2]["y"])
                 Regu.positions.append(node_pos)
         return
 
@@ -645,8 +645,8 @@ class Reader(AbstractReader):
         tr.is_center_tap = False
         # Set transformer position
         node_pos = Position(model)
-        node_pos.long = float(self.nxGraph.node[node2]["x"])
-        node_pos.lat = float(self.nxGraph.node[node2]["y"])
+        node_pos.long = float(self.nxGraph.nodes[node2]["x"])
+        node_pos.lat = float(self.nxGraph.nodes[node2]["y"])
         tr.positions.append(node_pos)
         for i in range(2):
             nPhases = len(reg_data["phases"])
