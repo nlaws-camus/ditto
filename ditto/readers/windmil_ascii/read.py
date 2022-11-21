@@ -498,8 +498,8 @@ class Reader(AbstractReader):
 
                 X_R_ratio = float(winding_data["X/R Ratio- Phase A"].iloc[0])
                 Zpercentage = float(winding_data["Percent Impedance- Zps"].iloc[0])
-                r_percent = np.sqrt(Zpercentage ** 2 / (X_R_ratio ** 2 + 1))
-                x_percent = np.sqrt(Zpercentage ** 2 - r_percent ** 2)
+                r_percent = np.sqrt(Zpercentage**2 / (X_R_ratio**2 + 1))
+                x_percent = np.sqrt(Zpercentage**2 - r_percent**2)
 
                 tr = PowerTransformer(model)
                 tr.name = node2.replace("node_", "tr_")
