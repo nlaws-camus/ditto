@@ -60,9 +60,10 @@ class Reader(AbstractReader):
         try:
             wm_data = wm2graph(self.windmil_folder)
             self.nxGraph = wm_data.nxGraph
-        except:
+        except Exception as e:
+            print(e)
             raise ValueError(
-                "Unable to open project from {name}".format(name=self.windmil_folder)
+                "Unable to parse project from {name}".format(name=self.windmil_folder)
             )
         return
 
