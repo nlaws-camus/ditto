@@ -8,7 +8,9 @@ Tests for cyme reader
 """
 import os
 import pytest as pt
+from ditto.readers.cyme.read import Reader
 from ditto.store import Store
+from ditto.models.line import Line
 
 current_directory = os.path.realpath(os.path.dirname(__file__))
 
@@ -17,10 +19,6 @@ def test_network_protectors():
     """
     Tests the network protectors parsing.
     """
-    from ditto.readers.cyme.read import Reader
-    from ditto.store import Store
-    from ditto.models.line import Line
-
     m = Store()
     r = Reader(
         data_folder_path=os.path.join(
@@ -85,10 +83,6 @@ def test_breakers():
     """
     Tests the breakers parsing.
     """
-    from ditto.readers.cyme.read import Reader
-    from ditto.store import Store
-    from ditto.models.line import Line
-
     m = Store()
     r = Reader(
         data_folder_path=os.path.join(
@@ -153,10 +147,6 @@ def test_switches():
     """
     Tests the switches parsing.
     """
-    from ditto.readers.cyme.read import Reader
-    from ditto.store import Store
-    from ditto.models.line import Line
-
     m = Store()
     r = Reader(
         data_folder_path=os.path.join(
