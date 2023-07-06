@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+# fmt: off
 import logging
 import math
 import os
@@ -170,10 +170,10 @@ class Reader(AbstractReader):
 
     An attempt at describing the CYME modeling concepts in CYME 9.0:
 
-    The highest level ID (abstract object) appears to be a StructureID, 
+    The highest level ID (abstract object) appears to be a StructureID,
     which can be found in:
     - [HEADNODES], [STRUCTUREUDD], [UNCONNECTED NODES]
-    However, there can probably be more than one structure in a network, so 
+    However, there can probably be more than one structure in a network, so
     perhaps the NetworkID is the highest level ID.
     It appears that a NetworkID is one to one with a substation or feeder.
 
@@ -246,7 +246,9 @@ class Reader(AbstractReader):
         self.load_model_id = None
         if "load_model_id" in kwargs.keys():
             self.load_model_id = int(kwargs["load_model_id"])
-        
+
+        # HERE if "feeder_id" in kwargs.keys():
+
         # Set the Network Type to be None. This is set in the parse_sections() function
         self.network_type = None
 
@@ -708,19 +710,19 @@ class Reader(AbstractReader):
         """
         .. warning:: This is a helper function for the parsers. Do not use directly.
 
-        Takes as input the object we want to parse (eg. "section" maps to "[SECTION]") 
+        Takes as input the object we want to parse (eg. "section" maps to "[SECTION]")
         as well as the list of attributes we want to extract (eg. ["sectionid", "fromnodeid", "tonodeid", "phase"]).
         Also takes the default positions of the attributes (mapping), which is overwritten if "format" is found in the line after `obj` is found.
         The function returns a dictionary of dictionaries, where each sub-dictionary contains the values of the desired attributes of a CYME object.
 
-        The first and only top-level key in the returned dictionary is set to the first comma separated value in the line 
-        after the "format" line. For example, given 
+        The first and only top-level key in the returned dictionary is set to the first comma separated value in the line
+        after the "format" line. For example, given
 
-        - line="[TRANSFORMER]" 
-        - obj="transformer" 
+        - line="[TRANSFORMER]"
+        - obj="transformer"
         - attribute_list=["kva", "kvllprim", "kvllsec"]
         - args={"type": "transformer"}
-        
+
         the following (truncated) example lines in network.txt:
 
             [TRANSFORMER]
@@ -748,7 +750,7 @@ class Reader(AbstractReader):
 
         Note that the `mapping` argument is not used in the above example because there is a "FORMAT_TRANSFORMER="
         line after the section header, which is used to define the `mapping`.
-        
+
 
         TODO is this case handled?!: (i.e. when the format is only temporary?)
         [SECTION]
@@ -883,7 +885,7 @@ class Reader(AbstractReader):
         if self.verbose: logger.info("Parsing the header...")
 
         self.parse_header()
-        
+
         if self.verbose: logger.info("Parsing the Headnodes...")
         self.parse_head_nodes(model)
 
@@ -978,7 +980,7 @@ class Reader(AbstractReader):
             model[self.subnetwork_connections[key]["nodeid"]].is_substation_connection = True
 
     def parse_head_nodes(self, model):
-        """ 
+        """
         This parses the [HEADNODES] objects and is used to build Feeder_metadata DiTTo objects which define the feeder names and feeder headnodes
         HEADNODES maps NodeID <-> NetworkID
         and NetworkID is used to identify SUBSTATION and FEEDER in [SECTION]
@@ -1000,7 +1002,7 @@ class Reader(AbstractReader):
         #     feeder_metadata = Feeder_metadata(model)
         #     feeder_metadata.name = headnode["networkid"].strip().lower()
         #     feeder_metadata.headnode = headnode["nodeid"].strip().lower()
-        
+
 
     def parse_sources(self, model):
         """Parse the sources."""
@@ -1062,7 +1064,6 @@ class Reader(AbstractReader):
                 )
             )
 
-
         self.get_file_content("equipment")
 
         for line in self.content:
@@ -1071,7 +1072,7 @@ class Reader(AbstractReader):
                     line, "substation", ["id", "mva", "kvll", "conn"], mapp_sub
                 )
             )
-        if len(sources.items()) == 0:
+        if len(sources.items()) == 0:  # then we loop through [SOURCE EQUIVALENT]
             for sid, source_equivalent_data in source_equivalents.items():
                 if source_equivalent_data["loadmodelname"].lower() != "default":
                     continue  # Want to only use the default source equivalent configuration
@@ -1103,18 +1104,18 @@ class Reader(AbstractReader):
                     api_source.phases = phases
                 except:
                     pass
-                
+
                 # If there is a substation then it should be the source bus not a feeder
                 # Or if there is only one source
                 # TODO multiple substations are multiple feeders without a substation?
-                if len(source_equivalent_data) == 1:
+                if len(source_equivalents) == 1:
                     api_source.is_sourcebus = True
                 else:
                     if _from in self.headnodes.keys():
                         if "type" in self.headnodes[_from]:
                             if self.headnodes[_from]["type"] == "substation":
                                 api_source.is_sourcebus = True
-                
+
 
                 try:
                     api_source.rated_power = 10 ** 3 * float(
@@ -1183,11 +1184,8 @@ class Reader(AbstractReader):
                             _to = v["fromnodeid"]
                             _from = v["tonodeid"]
                             phases = list(v["phase"])
-                    try:
-                        api_source = PowerSource(model)
-                    except:
-                        pass
 
+                    api_source = PowerSource(model)
                     api_source.name = _from + "_src"
 
                     try:
@@ -1208,6 +1206,7 @@ class Reader(AbstractReader):
                         pass
 
                     api_source.is_sourcebus = True
+                    # HERE not all sources should be sourcebus? what will happen if we only let one source be the sourcebus?
 
                     try:
                         api_source.rated_power = 10 ** 3 * float(subs[sid]["mva"])
@@ -1553,7 +1552,7 @@ class Reader(AbstractReader):
         ...
 
         [SECTION]
-        FORMAT_section=sectionid,fromnodeid,...,tonodeid,...,phase 
+        FORMAT_section=sectionid,fromnodeid,...,tonodeid,...,phase
         FORMAT_Feeder=networkid,headnodeid,...
         Feeder=feeder_1,head_feeder_1
         section_1_feeder_1,node_1,node_2,ABC
@@ -1581,11 +1580,12 @@ class Reader(AbstractReader):
         3) section_phase_mapping: dictionary where keys are section ids and values are tuples (node_1, node_2, phase)
 
         .. warning:: This should be called prior to any other parser because the other parsers rely on these 3 data structures.
+
+        TODO argument for parsing only one feeder?
         """
         self.feeder_section_mapping = {}
         self.section_feeder_mapping = {}
         self.section_phase_mapping = {}
-
         self.network_data = {}
 
         format_section = None
@@ -1745,7 +1745,7 @@ class Reader(AbstractReader):
                         # And finally, add a new entry to section_feeder_mapping
                         self.section_feeder_mapping[_sectionID] = _netID
                         # section_feeder_mapping should be section_network_mapping
-                        # b/c network can be feeder or substation 
+                        # b/c network can be feeder or substation
 
                     # Finally, move on to next line
                     line = next(self.content)
@@ -3857,7 +3857,7 @@ class Reader(AbstractReader):
             "switchedkvarb": 14,
             "switchedkvarc": 15,
             "voltageoverride": 20,
-            "voltageoverrideon": 21, 
+            "voltageoverrideon": 21,
             "voltageoverrideoff": 22,
             "kv": 24,
             "control": 25,
@@ -3942,7 +3942,7 @@ class Reader(AbstractReader):
                         "offvaluec",
                         "control",
                         "voltageoverride",
-                        "voltageoverrideon", 
+                        "voltageoverrideon",
                         "voltageoverrideoff",
                     ],
                     mapp_shunt_capacitor_settings,
@@ -4164,7 +4164,7 @@ class Reader(AbstractReader):
                 # Append the phase capacitor object to the capacitor
                 api_capacitor.measuring_element = sectionID  # the line for control measurements
                 api_capacitor.phase_capacitors.append(api_phaseCapacitor)
-            
+
             if len(on_values) > 1:
                 if not all(x == on_values[0] for x in on_values[1:]):
                     logger.warn(f"Not all of the on values for capacitor in section {sectionID} are the same. Using the lowest value.")
@@ -4195,16 +4195,16 @@ class Reader(AbstractReader):
 
     def parse_transformers(self, model):
         """
-        Parse the transformers from CYME to DiTTo. 
-        Since substation transformer can have LTCs attached, when parsing a transformer, 
+        Parse the transformers from CYME to DiTTo.
+        Since substation transformer can have LTCs attached, when parsing a transformer,
         we also create a regulator if "isltc" column is true. (LTCs are represented as regulators.)
         CYME equipment that have "isltc" column include:
         - TRANSFORMER
         - AUTOTRANSFORMER
 
-        The [TRANSFORMER] section specifies generic transformers that can be place in the 
-        network via other section specifications. For example, 
-        [TRANSFORMER BYPHASE SETTING] contains columns for 
+        The [TRANSFORMER] section specifies generic transformers that can be place in the
+        network via other section specifications. For example,
+        [TRANSFORMER BYPHASE SETTING] contains columns for
         PhaseTransformerID1, PhaseTransformerID2, and PhaseTransformerID3
         which must have at least one (string) value that corresponds to [TRANSFORMER] ID
 
@@ -4240,7 +4240,7 @@ class Reader(AbstractReader):
         - TODO add [PHASE SHIFTER TRANSFORMER]
 
         NOTE: it appears that all BYPHASE values are only SETTINGs (no BYPHASE equipment) and so
-        TRANSFORMER BYPHASE SETTING defines values for a TRANSFORMER (there are also 
+        TRANSFORMER BYPHASE SETTING defines values for a TRANSFORMER (there are also
         REGULATOR BYHPASE SETTING and OVERHEAD BYPHASE SETTING)
         """
         # Instanciate the list in which we store the DiTTo transformer objects
@@ -4518,7 +4518,7 @@ class Reader(AbstractReader):
             #       TRANSFORMER BYPHASE SETTING     #
             #                                       #
             #########################################
-            
+
             self.settings.update(  # why self.settings? (and not a local dict?)
                 self.parser_helper(
                     line,
@@ -4887,7 +4887,7 @@ class Reader(AbstractReader):
 
                 # Here we know that we have two windings...
                 add_two_windings(api_transformer, transformer_data, settings, model, phases, R_perc)
-            
+
             # Handle Grounding transformers
             if settings["type"] == "grounding_transformer":
 
@@ -4962,7 +4962,7 @@ class Reader(AbstractReader):
             if settings["type"] == "transformer_byphase":
                 # at least one PhaseTransformerID is required, which corresponds
                 # with a self.transformers key
-                
+
                 trfx_id = None
                 for phs in [1,2,3]:
                     k = "phasetransformerid"+str(phs)
@@ -4973,7 +4973,7 @@ class Reader(AbstractReader):
                         trfx_id = settings[k]
                         break
                     # TODO is it possible for TRANSFORMER BYPHASE SETTING to have more than one PhaseTransformerID?
-                
+
                 if trfx_id is not None and trfx_id in self.transformers.keys():
                     transformer_data = self.transformers[trfx_id]
                     xhl, R_perc = get_transformer_xhl_Rpercent(transformer_data)
@@ -5313,13 +5313,13 @@ class Reader(AbstractReader):
 
         self._network_equivalents = {}
         mapp_section = {"sectionid": 0, "fromnodeid": 1, "tonodeid": 2, "phase": 3}
-        mapp_network_equivalents = { 
+        mapp_network_equivalents = {
                 "sectionid":0,
                 "devicenumber": 2,
                 "coordx": 6,
                 "coordy": 7,
                 'zraa':9,
-                'zrab':10, 
+                'zrab':10,
                 'zrac':11,
                 'zrba': 12,
                 'zrbb':13,
@@ -5408,13 +5408,13 @@ class Reader(AbstractReader):
                     api_line.from_element_connection_index = int( self.section_phase_mapping[sectionID]["fromnodeindex"])
                 except:
                     pass
-    
+
                 # Set the connection index for the from_element (info is in the section)
                 try:
                     api_line.to_element_connection_index = int( self.section_phase_mapping[sectionID]["tonodeindex"])
                 except:
                     pass
-                
+
                 api_line.feeder_name = self.section_feeder_mapping[sectionID]
                 # Set the position
                 try:
@@ -5480,10 +5480,10 @@ class Reader(AbstractReader):
                     api_load_from.connecting_element = self.section_phase_mapping[sectionID][ "fromnodeid" ]
                     api_load_from.name = sectionID+'_ne_from_load'
                     # Set the connection index for the from_element (info is in the section)
-                
+
                     api_load_from.phase_loads = []
                     api_load_from.feeder_name = self.section_feeder_mapping[sectionID]
-    
+
                     for ph in phases:
                         try:
                             api_phase_load_from = PhaseLoad(model)
@@ -5491,12 +5491,12 @@ class Reader(AbstractReader):
                             raise ValueError(
                                 "Unable to instanciate PhaseLoad DiTTo object."
                             )
-    
+
                         try:
                             api_phase_load_from.phase = ph
                         except:
                             pass
-    
+
                         try:
                             api_phase_load_from.p, api_phase_load_from.q = (
                                 10 ** 3 * float(settings['loadfromkw'+ph.lower()]),
@@ -5504,7 +5504,7 @@ class Reader(AbstractReader):
                             )
                         except:
                             pass
-    
+
                         # TODO : use load_type_data
                         api_phase_load_from.ppercentcurrent = 0
                         api_phase_load_from.qpercentcurrent = 0
@@ -5512,7 +5512,7 @@ class Reader(AbstractReader):
                         api_phase_load_from.qpercentpower = 1
                         api_phase_load_from.ppercentimpedance = 0
                         api_phase_load_from.qpercentimpedance = 0
-    
+
                         api_load_from.phase_loads.append(api_phase_load_from)
 
                 ### Create load at from node
@@ -5528,11 +5528,11 @@ class Reader(AbstractReader):
                     api_load_to.connecting_element = self.section_phase_mapping[sectionID][ "tonodeid" ]
                     api_load_to.name = sectionID+'_ne_to_load'
                     # Set the connection index for the from_element (info is in the section)
-    
+
                     api_load_to.phase_loads = []
-                
+
                     api_load_to.feeder_name = self.section_feeder_mapping[sectionID]
-    
+
                     for ph in phases:
                         try:
                             api_phase_load_to = PhaseLoad(model)
@@ -5540,12 +5540,12 @@ class Reader(AbstractReader):
                             raise ValueError(
                                 "Unable to instanciate PhaseLoad DiTTo object."
                             )
-    
+
                         try:
                             api_phase_load_to.phase = ph
                         except:
                             pass
-    
+
                         try:
                             api_phase_load_to.p, api_phase_load_to.q = (
                                 10 ** 3 * float(settings['loadtokw'+ph.lower()]),
@@ -5553,7 +5553,7 @@ class Reader(AbstractReader):
                             )
                         except:
                             pass
-    
+
                         # TODO : use load_type_data
                         api_phase_load_to.ppercentcurrent = 0
                         api_phase_load_to.qpercentcurrent = 0
@@ -5561,10 +5561,10 @@ class Reader(AbstractReader):
                         api_phase_load_to.qpercentpower = 1
                         api_phase_load_to.ppercentimpedance = 0
                         api_phase_load_to.qpercentimpedance = 0
-    
-    
+
+
                         api_load_to.phase_loads.append(api_phase_load_to)
-    
+
     def parse_loads(self, model):
         """Parse the loads from CYME to DiTTo."""
         # Instanciate the list in which we store the DiTTo load objects
@@ -5691,7 +5691,7 @@ class Reader(AbstractReader):
         for sectionID in self.customer_loads.keys():
             if sectionID.endswith("*"):
                 section_ids_with_more_than_one_load.add(sectionID.lower().strip("*"))
-        
+
         for sectionID, settings in self.customer_loads.items():
 
             """
@@ -5711,7 +5711,7 @@ class Reader(AbstractReader):
 
             if sectionID in self.loads:
                 # FORMAT_LOADS=SectionID,DeviceNumber,DeviceStage,Flags,LoadType,Connection,Location
-                load_data = self.loads[sectionID]  
+                load_data = self.loads[sectionID]
             else:
                 load_data = {}
 
@@ -6548,3 +6548,4 @@ class Reader(AbstractReader):
                 for element in non_connector:
                     element.connecting_element = to_element
 
+# fmt: on
